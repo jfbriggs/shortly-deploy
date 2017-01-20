@@ -3,8 +3,14 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     //build grunt actions
+
     eslint: {
-      target: ['public/client/**/*.js']
+      target: ['public/**/*.js',
+        'Gruntfile.js',
+        'app/**/*.js',
+        'lib/**/*.js',
+        'spec/**/*.js',
+        './*.js']
     },
 
     concat: {
@@ -13,22 +19,23 @@ module.exports = function(grunt) {
       },
       dist: {
         src: ['public/client/**/*.js'],
-        dest: 'dist/built.js',
+        dest: 'public/dist/built.js',
       },
     },
 
     uglify: {
-      my_target: {
+      dist: {
         files: {
-          'dest/output.min.js': ['dist/built.js']
+          'public/dist/built.min.js': ['public/dist/built.js']
         }
       }
     },
 
     cssmin: {
-      my_target: {
-        src: 'public/style.css',
-        dest: 'public/style.min.css'
+      dist: {
+        files: {
+          'public/dist/style.min.css': ['public/style.css']
+        }
       }
     },
 
@@ -61,18 +68,20 @@ module.exports = function(grunt) {
         ]
       },
 
-
-
       css: {
         files: 'public/*.css',
         tasks: ['cssmin']
       }
     },
+
     //upload grunt command
-    //TODO shell
+
     shell: {
       prodServer: {
-        command: 'git push live master'
+        command: 'git push live master',
+        options: {
+          failOnError: true
+        }
       }
     },
   });
@@ -94,18 +103,18 @@ module.exports = function(grunt) {
   // Main grunt tasks
   ////////////////////////////////////////////////////
 
-  grunt.registerTask('test', ['mochaTest']);
+  grunt.registerTask('test', ['eslint', 'mochaTest']);
 
-  grunt.registerTask('build', ['eslint', 'test', 'concat']);
+  grunt.registerTask('build', ['concat', 'uglify', 'cssmin']);
 
   grunt.registerTask('upload', function(n) {
     if (grunt.option('prod')) {
-      ['deploy', 'shell'];
+      grunt.task.run(['shell:prodServer']);
     } else {
       grunt.task.run(['server-dev']);
     }
   });
 
-  grunt.registerTask('deploy', ['build', 'uglify', 'cssmin']);
+  grunt.registerTask('deploy', ['test', 'build', 'upload']);
 
 };
